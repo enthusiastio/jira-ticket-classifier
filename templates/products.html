@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Software Products</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .container {
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 40px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        .btn-success {
+            background-color: #2ecc71;
+        }
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        .btn-secondary {
+            background-color: #95a5a6;
+        }
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 500px;
+            max-width: 90%;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            margin: 0;
+            font-size: 20px;
+        }
+        .close {
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #777;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .hidden {
+            display: none;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border-left-color: #3498db;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .nav-links {
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            color: #3498db;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        .extra-info-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .extra-info-item {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .extra-info-text {
+            flex: 1;
+            padding-right: 20px;
+        }
+        .extra-info-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            margin-bottom: -1px;
+            background-color: transparent;
+        }
+        .tab.active {
+            border-color: #ddd;
+            border-bottom-color: white;
+            background-color: white;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/products" class="active">Manage Products</a>
+        </div>
+        
+        <div class="tab-container">
+            <div class="tabs">
+                <button class="tab active" data-tab="tab-products">Software Products</button>
+                <button class="tab" data-tab="tab-extra-info">Extra Info</button>
+            </div>
+            
+            <div id="tab-products" class="tab-content active section">
+                <div class="header-actions">
+                    <h1>Software Products</h1>
+                    <button id="add-product-btn" class="btn">Add New Product</button>
+                </div>
+                
+                <div id="products-loading">
+                    <span class="spinner"></span> Loading products...
+                </div>
+                
+                <table id="products-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Component ID</th>
+                            <th>Description</th>
+                            <th>Likely Authors</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-body">
+                        <!-- Products will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="tab-extra-info" class="tab-content section">
+                <div class="header-actions">
+                    <h1>Extra Info Items</h1>
+                    <button id="add-info-btn" class="btn">Add New Info</button>
+                </div>
+                
+                <p>These items provide additional guidance to the AI when classifying tickets.</p>
+                
+                <div id="info-loading">
+                    <span class="spinner"></span> Loading extra info...
+                </div>
+                
+                <div id="info-container">
+                    <ul id="info-list" class="extra-info-list">
+                        <!-- Extra info items will be loaded here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div id="message-container" class="hidden message"></div>
+        
+        <!-- Add/Edit Product Modal -->
+        <div id="product-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modal-title">Add New Product</h3>
+                    <button class="close">&times;</button>
+                </div>
+                <form id="product-form">
+                    <div class="form-group">
+                        <label for="product-name">Product Name:</label>
+                        <input type="text" id="product-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="component-id">Component ID:</label>
+                        <input type="text" id="component-id" name="componentId" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-description">Description:</label>
+                        <textarea id="product-description" name="description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-authors">Likely Authors (comma separated):</label>
+                        <input type="text" id="product-authors" name="authors" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close-btn">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Add/Edit Extra Info Modal -->
+        <div id="info-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="info-modal-title">Add New Info</h3>
+                    <button class="close">&times;</button>
+                </div>
+                <form id="info-form">
+                    <div class="form-group">
+                        <label for="info-text">Information Text:</label>
+                        <textarea id="info-text" name="text" required placeholder="Enter information or guidance for the ticket classification system"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close-btn">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Confirm Delete</h3>
+                    <button class="close">&times;</button>
+                </div>
+                <p>Are you sure you want to delete <strong id="delete-item-name"></strong>?</p>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-btn">Cancel</button>
+                    <button id="confirm-delete-btn" type="button" class="btn btn-danger">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to current tab and content
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // DOM Elements
+            const messageContainer = document.getElementById('message-container');
+            
+            // Products Tab Elements
+            const productsTable = document.getElementById('products-table');
+            const productsBody = document.getElementById('products-body');
+            const productsLoadingIndicator = document.getElementById('products-loading');
+            const addProductBtn = document.getElementById('add-product-btn');
+            const productModal = document.getElementById('product-modal');
+            const productForm = document.getElementById('product-form');
+            const modalTitle = document.getElementById('modal-title');
+            
+            // Product Modal fields
+            const productNameInput = document.getElementById('product-name');
+            const componentIdInput = document.getElementById('component-id');
+            const productDescriptionInput = document.getElementById('product-description');
+            const productAuthorsInput = document.getElementById('product-authors');
+            
+            // Extra Info Tab Elements
+            const infoList = document.getElementById('info-list');
+            const infoLoadingIndicator = document.getElementById('info-loading');
+            const addInfoBtn = document.getElementById('add-info-btn');
+            const infoModal = document.getElementById('info-modal');
+            const infoForm = document.getElementById('info-form');
+            const infoModalTitle = document.getElementById('info-modal-title');
+            
+            // Info Modal fields
+            const infoTextInput = document.getElementById('info-text');
+            
+            // Delete Modal Elements
+            const deleteModal = document.getElementById('delete-modal');
+            const deleteItemName = document.getElementById('delete-item-name');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            
+            // Current items being edited/deleted
+            let currentProduct = null;
+            let currentInfoIndex = null;
+            let deleteType = null; // 'product' or 'info'
+            
+            // Load data on page load
+            loadProducts();
+            loadExtraInfo();
+            
+            // Products Event Listeners
+            addProductBtn.addEventListener('click', function() {
+                openAddProductModal();
+            });
+            
+            productForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleProductSubmit();
+            });
+            
+            // Extra Info Event Listeners
+            addInfoBtn.addEventListener('click', function() {
+                openAddInfoModal();
+            });
+            
+            infoForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleInfoSubmit();
+            });
+            
+            // Close buttons
+            document.querySelectorAll('.close, .close-btn').forEach(element => {
+                element.addEventListener('click', function() {
+                    closeModal(productModal);
+                    closeModal(infoModal);
+                    closeModal(deleteModal);
+                });
+            });
+            
+            // Delete confirmation
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (deleteType === 'product') {
+                    deleteProduct(currentProduct);
+                } else if (deleteType === 'info') {
+                    deleteExtraInfo(currentInfoIndex);
+                }
+                closeModal(deleteModal);
+            });
+            
+            // PRODUCT FUNCTIONS
+            async function loadProducts() {
+                showLoading(productsLoadingIndicator, true);
+                try {
+                    const response = await fetch('/api/products');
+                    const products = await response.json();
+                    
+                    // Clear table
+                    productsBody.innerHTML = '';
+                    
+                    // Sort product names alphabetically
+                    const sortedNames = Object.keys(products).sort();
+                    
+                    // No products yet
+                    if (sortedNames.length === 0) {
+                        productsBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No products found. Click "Add New Product" to create one.</td></tr>';
+                        return;
+                    }
+                    
+                    // Add products to table
+                    sortedNames.forEach(name => {
+                        const product = products[name];
+                        const row = document.createElement('tr');
+                        
+                        // Format authors as comma-separated string
+                        const authors = Array.isArray(product.likely_authors) 
+                            ? product.likely_authors.join(', ')
+                            : product.likely_authors;
+                        
+                        row.innerHTML = `
+                            <td>${name}</td>
+                            <td>${product.componentId}</td>
+                            <td>${product.description}</td>
+                            <td>${authors}</td>
+                            <td class="action-buttons">
+                                <button class="btn edit-product-btn" data-name="${name}">Edit</button>
+                                <button class="btn btn-danger delete-product-btn" data-name="${name}">Delete</button>
+                            </td>
+                        `;
+                        
+                        productsBody.appendChild(row);
+                    });
+                    
+                    // Add event listeners to buttons
+                    document.querySelectorAll('.edit-product-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const name = this.getAttribute('data-name');
+                            openEditProductModal(name, products[name]);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.delete-product-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const name = this.getAttribute('data-name');
+                            openDeleteConfirmation('product', name);
+                        });
+                    });
+                    
+                } catch (error) {
+                    console.error('Error loading products:', error);
+                    showMessage('Failed to load products. Please try again.', 'error');
+                } finally {
+                    showLoading(productsLoadingIndicator, false);
+                }
+            }
+            
+            function openAddProductModal() {
+                modalTitle.textContent = 'Add New Product';
+                productForm.reset();
+                productNameInput.disabled = false;
+                currentProduct = null;
+                openModal(productModal);
+            }
+            
+            function openEditProductModal(name, product) {
+                modalTitle.textContent = 'Edit Product';
+                productNameInput.value = name;
+                productNameInput.disabled = true; // Can't change product name
+                componentIdInput.value = product.componentId;
+                productDescriptionInput.value = product.description;
+                
+                // Format authors as comma-separated string
+                const authors = Array.isArray(product.likely_authors) 
+                    ? product.likely_authors.join(', ')
+                    : product.likely_authors;
+                
+                productAuthorsInput.value = authors;
+                currentProduct = name;
+                openModal(productModal);
+            }
+            
+            async function handleProductSubmit() {
+                const formData = {
+                    name: productNameInput.value.trim(),
+                    componentId: componentIdInput.value.trim(),
+                    description: productDescriptionInput.value.trim(),
+                    authors: productAuthorsInput.value.trim()
+                };
+                
+                if (!formData.name || !formData.componentId || !formData.description || !formData.authors) {
+                    showMessage('All fields are required', 'error');
+                    return;
+                }
+                
+                try {
+                    let response;
+                    
+                    if (currentProduct === null) {
+                        // Add new product
+                        response = await fetch('/api/products', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(formData)
+                        });
+                    } else {
+                        // Update existing product
+                        response = await fetch(`/api/products/${currentProduct}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(formData)
+                        });
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showMessage(result.message, 'success');
+                        closeModal(productModal);
+                        loadProducts();
+                    } else {
+                        showMessage(result.message || 'An error occurred', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error saving product:', error);
+                    showMessage('Failed to save product. Please try again.', 'error');
+                }
+            }
+            
+            async function deleteProduct(name) {
+                try {
+                    const response = await fetch(`/api/products/${name}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showMessage(result.message, 'success');
+                        loadProducts();
+                    } else {
+                        showMessage(result.message || 'An error occurred', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting product:', error);
+                    showMessage('Failed to delete product. Please try again.', 'error');
+                }
+            }
+            
+            // EXTRA INFO FUNCTIONS
+            async function loadExtraInfo() {
+                showLoading(infoLoadingIndicator, true);
+                try {
+                    const response = await fetch('/api/extra-info');
+                    const infoItems = await response.json();
+                    
+                    // Clear list
+                    infoList.innerHTML = '';
+                    
+                    // No items yet
+                    if (infoItems.length === 0) {
+                        infoList.innerHTML = '<li style="text-align: center; padding: 20px;">No extra info items found. Click "Add New Info" to create one.</li>';
+                        return;
+                    }
+                    
+                    // Add items to list
+                    infoItems.forEach((text, index) => {
+                        const item = document.createElement('li');
+                        item.className = 'extra-info-item';
+                        
+                        item.innerHTML = `
+                            <div class="extra-info-text">${text}</div>
+                            <div class="extra-info-actions">
+                                <button class="btn edit-info-btn" data-index="${index}">Edit</button>
+                                <button class="btn btn-danger delete-info-btn" data-index="${index}">Delete</button>
+                            </div>
+                        `;
+                        
+                        infoList.appendChild(item);
+                    });
+                    
+                    // Add event listeners to buttons
+                    document.querySelectorAll('.edit-info-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const index = parseInt(this.getAttribute('data-index'));
+                            openEditInfoModal(index, infoItems[index]);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.delete-info-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const index = parseInt(this.getAttribute('data-index'));
+                            openDeleteConfirmation('info', index, infoItems[index]);
+                        });
+                    });
+                    
+                } catch (error) {
+                    console.error('Error loading extra info:', error);
+                    showMessage('Failed to load extra info items. Please try again.', 'error');
+                } finally {
+                    showLoading(infoLoadingIndicator, false);
+                }
+            }
+            
+            function openAddInfoModal() {
+                infoModalTitle.textContent = 'Add New Info';
+                infoForm.reset();
+                currentInfoIndex = null;
+                openModal(infoModal);
+            }
+            
+            function openEditInfoModal(index, text) {
+                infoModalTitle.textContent = 'Edit Info Item';
+                infoTextInput.value = text;
+                currentInfoIndex = index;
+                openModal(infoModal);
+            }
+            
+            async function handleInfoSubmit() {
+                const infoText = infoTextInput.value.trim();
+                
+                if (!infoText) {
+                    showMessage('Info text is required', 'error');
+                    return;
+                }
+                
+                try {
+                    let response;
+                    const formData = { text: infoText };
+                    
+                    if (currentInfoIndex === null) {
+                        // Add new info
+                        response = await fetch('/api/extra-info', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(formData)
+                        });
+                    } else {
+                        // Update existing info
+                        response = await fetch(`/api/extra-info/${currentInfoIndex}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(formData)
+                        });
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showMessage(result.message, 'success');
+                        closeModal(infoModal);
+                        loadExtraInfo();
+                    } else {
+                        showMessage(result.message || 'An error occurred', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error saving info item:', error);
+                    showMessage('Failed to save info item. Please try again.', 'error');
+                }
+            }
+            
+            async function deleteExtraInfo(index) {
+                try {
+                    const response = await fetch(`/api/extra-info/${index}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showMessage(result.message, 'success');
+                        loadExtraInfo();
+                    } else {
+                        showMessage(result.message || 'An error occurred', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting info item:', error);
+                    showMessage('Failed to delete info item. Please try again.', 'error');
+                }
+            }
+            
+            // UTILITY FUNCTIONS
+            function openDeleteConfirmation(type, itemId, itemText) {
+                deleteType = type;
+                
+                if (type === 'product') {
+                    currentProduct = itemId;
+                    deleteItemName = 'product "' + itemId + '"';
+                } else if (type === 'info') {
+                    currentInfoIndex = itemId;
+                    deleteItemName = 'this info item';
+                    
+                    // Truncate for display if too long
+                    const displayText = itemText.length > 50 ? itemText.substring(0, 50) + '...' : itemText;
+                    document.getElementById('delete-item-name').textContent = `"${displayText}"`;
+                }
+                
+                openModal(deleteModal);
+            }
+            
+            function showMessage(text, type) {
+                messageContainer.textContent = text;
+                messageContainer.className = `message ${type}`;
+                messageContainer.classList.remove('hidden');
+                
+                // Hide message after 5 seconds
+                setTimeout(() => {
+                    messageContainer.classList.add('hidden');
+                }, 5000);
+            }
+            
+            function showLoading(indicator, isLoading) {
+                if (isLoading) {
+                    indicator.classList.remove('hidden');
+                } else {
+                    indicator.classList.add('hidden');
+                }
+            }
+            
+            function openModal(modal) {
+                modal.style.display = 'flex';
+            }
+            
+            function closeModal(modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

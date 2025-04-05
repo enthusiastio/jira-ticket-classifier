@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jira Ticket Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .container {
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .button-group {
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        button.update-btn {
+            background-color: #27ae60;
+        }
+        button.update-btn:hover {
+            background-color: #219653;
+        }
+        button.update-btn:disabled {
+            background-color: #95a5a6;
+        }
+        .results {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3498db;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .ticket-list {
+            margin-top: 20px;
+        }
+        .ticket-item {
+            padding: 10px;
+            border-left: 4px solid #3498db;
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+        }
+        .updatable {
+            border-left-color: #27ae60;
+        }
+        .skipped {
+            border-left-color: #e74c3c;
+        }
+        .updated {
+            border-left-color: #2ecc71;
+            background-color: #e8f9f0;
+        }
+        .failed {
+            border-left-color: #e74c3c;
+            background-color: #fdedec;
+        }
+        .ticket-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .ticket-details {
+            font-size: 14px;
+            color: #666;
+        }
+        .progress-container {
+            margin: 20px 0;
+        }
+        summary {
+            cursor: pointer;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        details {
+            margin-bottom: 10px;
+        }
+        .steps-container {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .step {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .step-active .step-number {
+            background-color: #27ae60;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .step-title {
+            font-weight: bold;
+        }
+        .step-description {
+            color: #666;
+            font-size: 14px;
+        }
+        .nav-links {
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            color: #3498db;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        .nav-links a.active {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-links">
+            <a href="/" class="active">Home</a>
+            <a href="/products">Manage Products</a>
+        </div>
+        
+        <h1>Jira Ticket Classifier</h1>
+
+        <div class="steps-container">
+            <div class="step step-active" id="step1">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Preview Tickets</div>
+                    <div class="step-description">Fetch tickets from JIRA and classify them without making changes</div>
+                </div>
+            </div>
+            <div class="step" id="step2">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Update Tickets</div>
+                    <div class="step-description">Apply the changes to tickets in JIRA</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="sprint-ids">Sprint IDs (comma separated):</label>
+            <input type="text" id="sprint-ids" name="sprint-ids" placeholder="e.g. 1412, 1413, 1414">
+        </div>
+        
+        <div class="button-group">
+            <button id="preview-btn">Preview Changes</button>
+            <button id="update-btn" class="update-btn" disabled>Update Tickets</button>
+        </div>
+        
+        <span id="processing" class="hidden">
+            <span class="spinner"></span> <span id="processing-text">Processing tickets...</span>
+        </span>
+        
+        <div id="message-container" class="hidden message"></div>
+        
+        <div id="preview-container" class="results hidden">
+            <h2>Preview Results</h2>
+            <p>Review the changes below before updating tickets.</p>
+            <div id="preview-summary"></div>
+            <div id="preview-results"></div>
+        </div>
+        
+        <div id="update-container" class="results hidden">
+            <h2>Update Results</h2>
+            <div id="update-summary"></div>
+            <div id="update-results"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const previewButton = document.getElementById('preview-btn');
+            const updateButton = document.getElementById('update-btn');
+            const sprintIdsInput = document.getElementById('sprint-ids');
+            const processingIndicator = document.getElementById('processing');
+            const processingText = document.getElementById('processing-text');
+            const messageContainer = document.getElementById('message-container');
+            const previewContainer = document.getElementById('preview-container');
+            const updateContainer = document.getElementById('update-container');
+            const previewSummary = document.getElementById('preview-summary');
+            const previewResults = document.getElementById('preview-results');
+            const updateSummary = document.getElementById('update-summary');
+            const updateResults = document.getElementById('update-results');
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+
+            // Object to store user overrides for components and work types
+            const userOverrides = {};
+            
+            // Work type options (from the labels array in jira_agent.py)
+            const workTypes = ["Design", "Development", "Maintenance", "Devops", "Testing", "Documentation", "Management"];
+            
+            // Fetch software products for component options
+            let softwareProducts = {};
+            
+            // Fetch products at page load
+            fetchSoftwareProducts();
+            
+            async function fetchSoftwareProducts() {
+                try {
+                    const response = await fetch('/api/products');
+                    softwareProducts = await response.json();
+                } catch (error) {
+                    console.error("Error fetching software products:", error);
+                    showMessage("Failed to load software components", "error");
+                }
+            }
+
+            // Preview button click handler
+            previewButton.addEventListener('click', async function() {
+                // Get sprint IDs and validate
+                const sprintIdsText = sprintIdsInput.value.trim();
+                if (!sprintIdsText) {
+                    showMessage('Please enter at least one Sprint ID', 'error');
+                    return;
+                }
+
+                // Parse sprint IDs
+                const sprintIds = sprintIdsText.split(',')
+                    .map(id => id.trim())
+                    .filter(id => id.length > 0);
+                
+                if (sprintIds.length === 0) {
+                    showMessage('Please enter valid Sprint IDs', 'error');
+                    return;
+                }
+
+                // Show processing state
+                previewButton.disabled = true;
+                updateButton.disabled = true;
+                processingText.textContent = "Previewing tickets...";
+                processingIndicator.classList.remove('hidden');
+                messageContainer.classList.add('hidden');
+                previewContainer.classList.add('hidden');
+                updateContainer.classList.add('hidden');
+                
+                // Reset user overrides
+                Object.keys(userOverrides).forEach(key => delete userOverrides[key]);
+
+                try {
+                    // Send request to backend
+                    const response = await fetch('/preview-tickets', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ sprint_ids: sprintIds }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Show success message
+                        showMessage(`Preview completed for ${data.results.length} sprints`, 'success');
+                        
+                        // Display preview results
+                        displayPreviewResults(data.results);
+                        previewContainer.classList.remove('hidden');
+                        
+                        // Enable update button if we have updatable tickets
+                        let hasUpdatableTickets = false;
+                        data.results.forEach(sprint => {
+                            if (sprint.tickets_updatable > 0) {
+                                hasUpdatableTickets = true;
+                            }
+                        });
+                        
+                        if (hasUpdatableTickets) {
+                            updateButton.disabled = false;
+                            step2.classList.add('step-active');
+                        } else {
+                            showMessage('No tickets available for update', 'warning');
+                        }
+                    } else {
+                        // Show error message
+                        showMessage(`Error: ${data.message || 'Failed to preview tickets'}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessage(`An error occurred: ${error.message}`, 'error');
+                } finally {
+                    // Reset UI state
+                    previewButton.disabled = false;
+                    processingIndicator.classList.add('hidden');
+                }
+            });
+
+            // Update button click handler
+            updateButton.addEventListener('click', async function() {
+                // Show processing state
+                previewButton.disabled = true;
+                updateButton.disabled = true;
+                processingText.textContent = "Updating tickets...";
+                processingIndicator.classList.remove('hidden');
+                messageContainer.classList.add('hidden');
+                updateContainer.classList.add('hidden');
+
+                try {
+                    // Send request to backend with user overrides
+                    const response = await fetch('/update-tickets', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ overrides: userOverrides })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Show success message
+                        showMessage(`Successfully updated ${data.update_results.filter(r => r.updated).length} tickets`, 'success');
+                        
+                        // Display update results
+                        displayUpdateResults(data);
+                        updateContainer.classList.remove('hidden');
+                    } else {
+                        // Show error message
+                        showMessage(`Error: ${data.message || 'Failed to update tickets'}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessage(`An error occurred: ${error.message}`, 'error');
+                } finally {
+                    // Reset UI state
+                    previewButton.disabled = false;
+                    updateButton.disabled = true;
+                    processingIndicator.classList.add('hidden');
+                    
+                    // Reset steps
+                    step2.classList.remove('step-active');
+                    step1.classList.add('step-active');
+                }
+            });
+
+            function showMessage(text, type) {
+                messageContainer.textContent = text;
+                messageContainer.className = `message ${type}`;
+                messageContainer.classList.remove('hidden');
+            }
+
+            function displayPreviewResults(results) {
+                // Clear previous results
+                previewResults.innerHTML = '';
+
+                // Calculate total statistics
+                let totalProcessed = 0;
+                let totalUpdatable = 0;
+                let totalSkipped = 0;
+
+                results.forEach(sprint => {
+                    totalProcessed += sprint.tickets_processed || 0;
+                    totalUpdatable += sprint.tickets_updatable || 0;
+                    totalSkipped += sprint.tickets_skipped || 0;
+
+                    // Create sprint section
+                    const sprintSection = document.createElement('details');
+                    sprintSection.open = true;
+                    
+                    const sprintSummary = document.createElement('summary');
+                    sprintSummary.textContent = `Sprint ${sprint.sprint_id}: ${sprint.tickets_processed} tickets processed, ${sprint.tickets_updatable} updatable`;
+                    sprintSection.appendChild(sprintSummary);
+
+                    // Create ticket list
+                    const ticketList = document.createElement('div');
+                    ticketList.className = 'ticket-list';
+
+                    sprint.ticket_details.forEach(ticket => {
+                        const ticketItem = document.createElement('div');
+                        ticketItem.className = `ticket-item ${ticket.can_update ? 'updatable' : 'skipped'}`;
+
+                        const ticketHeader = document.createElement('div');
+                        ticketHeader.className = 'ticket-header';
+                        ticketHeader.textContent = `${ticket.key}: ${ticket.title}`;
+                        ticketItem.appendChild(ticketHeader);
+
+                        const ticketDetails = document.createElement('div');
+                        ticketDetails.className = 'ticket-details';
+                        
+                        // Show classification details
+                        if (ticket.classification) {
+                            const classification = ticket.classification;
+                            
+                            // Create container for classification details with dropdowns
+                            let classificationHTML = '<div class="classification-details">';
+                            
+                            // Component dropdown
+                            classificationHTML += `<div class="form-group">
+                                <label><strong>Component:</strong></label>
+                                <select class="component-select" data-ticket-key="${ticket.key}">
+                                    ly -->
+                                </select>
+                            </div>`;
+                            
+                            // Work type dropdown
+                            classificationHTML += `<div class="form-group">
+                                <label><strong>Work Type:</strong></label>
+                                <select class="work-type-select" data-ticket-key="${ticket.key}">
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>`;
+                            
+                            classificationHTML += `<strong>AI Confidence:</strong> ${classification.confidence}<br>`;
+                            classificationHTML += `<strong>Reason:</strong> ${classification.reason}<br>`;
+                            classificationHTML += '</div>';
+                            
+                            ticketDetails.innerHTML += classificationHTML;
+                        }
+
+                        // Show status
+                        ticketDetails.innerHTML += `<strong>Status:</strong> ${ticket.can_update ? 'Ready to update' : 'Will be skipped'}`;
+                        if (!ticket.can_update && ticket.skip_reason) {
+                            ticketDetails.innerHTML += ` (${ticket.skip_reason})`;
+                        }
+
+                        ticketItem.appendChild(ticketDetails);
+                        ticketList.appendChild(ticketItem);
+                    });
+
+                    sprintSection.appendChild(ticketList);
+                    previewResults.appendChild(sprintSection);
+                });
+                
+                // After DOM elements are created, populate dropdowns
+                populateDropdowns(results);
+
+                // Update summary
+                previewSummary.innerHTML = `
+                    <p>Total tickets processed: <strong>${totalProcessed}</strong></p>
+                    <p>Tickets ready to update: <strong>${totalUpdatable}</strong></p>
+                    <p>Tickets to be skipped: <strong>${totalSkipped}</strong></p>
+                `;
+                
+                if (totalUpdatable > 0) {
+                    previewSummary.innerHTML += `
+                        <p class="message warning">Click the "Update Tickets" button to apply these changes to JIRA.</p>
+                    `;
+                }
+            }
+            
+            function populateDropdowns(results) {
+                // Get all available component names from softwareProducts
+                const componentNames = Object.keys(softwareProducts).sort();
+                
+                // Loop through all ticket details in all sprints
+                results.forEach(sprint => {
+                    sprint.ticket_details.forEach(ticket => {
+                        // Populate dropdowns for ALL tickets with classification data, not just updatable ones
+                        if (ticket.classification) {
+                            // Get the component dropdown for this ticket
+                            const componentSelect = document.querySelector(`.component-select[data-ticket-key="${ticket.key}"]`);
+                            if (componentSelect) {
+                                // Clear any existing options
+                                componentSelect.innerHTML = '';
+                                
+                                // Add options for all available components
+                                componentNames.forEach(name => {
+                                    const option = document.createElement('option');
+                                    option.value = name;
+                                    option.textContent = name;
+                                    // Select the AI-determined component by default
+                                    if (name === ticket.classification.component) {
+                                        option.selected = true;
+                                    }
+                                    componentSelect.appendChild(option);
+                                });
+                                
+                                // Add change event listener
+                                componentSelect.addEventListener('change', function() {
+                                    // Save the user's selection in the overrides object
+                                    if (!userOverrides[ticket.key]) {
+                                        userOverrides[ticket.key] = {};
+                                    }
+                                    userOverrides[ticket.key].component = this.value;
+                                    
+                                    // If this was a non-updatable ticket, mark it as ready to update
+                                    if (!ticket.can_update) {
+                                        enableTicketUpdate(ticket);
+                                    }
+                                });
+                            }
+                            
+                            // Get the work type dropdown for this ticket
+                            const workTypeSelect = document.querySelector(`.work-type-select[data-ticket-key="${ticket.key}"]`);
+                            if (workTypeSelect) {
+                                // Clear any existing options
+                                workTypeSelect.innerHTML = '';
+                                
+                                // Add options for all work types
+                                workTypes.forEach(type => {
+                                    const option = document.createElement('option');
+                                    option.value = type;
+                                    option.textContent = type;
+                                    // Select the AI-determined work type by default
+                                    if (type === ticket.classification.work_type) {
+                                        option.selected = true;
+                                    }
+                                    workTypeSelect.appendChild(option);
+                                });
+                                
+                                // Add change event listener
+                                workTypeSelect.addEventListener('change', function() {
+                                    // Save the user's selection in the overrides object
+                                    if (!userOverrides[ticket.key]) {
+                                        userOverrides[ticket.key] = {};
+                                    }
+                                    userOverrides[ticket.key].work_type = this.value;
+                                    
+                                    // If this was a non-updatable ticket, mark it as ready to update
+                                    if (!ticket.can_update) {
+                                        enableTicketUpdate(ticket);
+                                    }
+                                });
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // Function to enable update for a previously non-updatable ticket
+            function enableTicketUpdate(ticket) {
+                // Find ticket element by iterating through all ticket items
+                const ticketItems = document.querySelectorAll('.ticket-item');
+                let ticketElement = null;
+                
+                // Find the ticket element containing the dropdown with the matching key
+                for (const item of ticketItems) {
+                    const dropdown = item.querySelector(`[data-ticket-key="${ticket.key}"]`);
+                    if (dropdown) {
+                        ticketElement = item;
+                        break;
+                    }
+                }
+                
+                if (ticketElement) {
+                    // Mark the ticket as updatable in the UI
+                    ticketElement.classList.remove('skipped');
+                    ticketElement.classList.add('updatable');
+                    
+                    // Update the status text by finding the status element
+                    const statusElements = ticketElement.querySelectorAll('strong');
+                    for (const element of statusElements) {
+                        if (element.textContent === 'Status:') {
+                            // Update the text node that follows the strong element
+                            if (element.nextSibling) {
+                                element.nextSibling.textContent = ' Ready to update (overridden by user)';
+                            }
+                            break;
+                        }
+                    }
+                    
+                    // Make sure the Update button is enabled
+                    updateButton.disabled = false;
+                    step2.classList.add('step-active');
+                    
+                    // Add a visual cue that the ticket has been enabled for update
+                    const ticketHeader = ticketElement.querySelector('.ticket-header');
+                    if (ticketHeader && !ticketHeader.querySelector('.override-badge')) {
+                        const badge = document.createElement('span');
+                        badge.className = 'override-badge';
+                        badge.textContent = '(Manual override)';
+                        badge.style.marginLeft = '10px';
+                        badge.style.fontSize = '12px';
+                        badge.style.color = '#27ae60';
+                        badge.style.fontWeight = 'normal';
+                        ticketHeader.appendChild(badge);
+                    }
+                    
+                    // Mark the ticket as updatable in our data model
+                    ticket.can_update = true;
+                }
+            }
+            
+            function displayUpdateResults(data) {
+                // Clear previous results
+                updateResults.innerHTML = '';
+                
+                const successCount = data.update_results.filter(r => r.updated).length;
+                const failCount = data.update_results.filter(r => !r.updated).length;
+                
+                // Create summary
+                updateSummary.innerHTML = `
+                    <p>Total tickets updated: <strong>${successCount}</strong></p>
+                    <p>Failed updates: <strong>${failCount}</strong></p>
+                `;
+                
+                // Create ticket list
+                const ticketList = document.createElement('div');
+                ticketList.className = 'ticket-list';
+                
+                data.update_results.forEach(ticket => {
+                    const ticketItem = document.createElement('div');
+                    ticketItem.className = `ticket-item ${ticket.updated ? 'updated' : 'failed'}`;
+                    
+                    const ticketHeader = document.createElement('div');
+                    ticketHeader.className = 'ticket-header';
+                    ticketHeader.textContent = `${ticket.key}: ${ticket.title}`;
+                    ticketItem.appendChild(ticketHeader);
+                    
+                    const ticketDetails = document.createElement('div');
+                    ticketDetails.className = 'ticket-details';
+                    
+                    // Show status
+                    ticketDetails.innerHTML += `<strong>Status:</strong> ${ticket.updated ? 'Successfully updated' : 'Update failed'}`;
+                    
+                    if (!ticket.updated && ticket.error) {
+                        ticketDetails.innerHTML += `<br><strong>Error:</strong> ${ticket.error}`;
+                    }
+                    
+                    ticketItem.appendChild(ticketDetails);
+                    ticketList.appendChild(ticketItem);
+                });
+                
+                updateResults.appendChild(ticketList);
+            }
+        });
+    </script>
+</body>
+</html>

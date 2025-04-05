@@ -1,0 +1,36 @@
+# Virtual Environment
+langchain-env/*
+
+# Flask session files
+flask_session/
+
+configuration/
+
+# Python cache files
+__pycache__
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Environment variables
+.env
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Logs
+*.log
+
+# Local development settings
+instance/

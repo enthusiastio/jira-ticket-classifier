@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jira-ticket-classifier.fullname" . }}
+  labels:
+    {{- include "jira-ticket-classifier.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "jira-ticket-classifier.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "jira-ticket-classifier.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: FLASK_APP
+              value: "app.py"
+            - name: FLASK_DEBUG
+              value: "{{ .Values.flask.debug }}"
+            - name: FLASK_SESSION_LIFETIME
+              value: "{{ .Values.flask.sessionLifetime }}"
+            - name: OPENAI_API_KEY
+              value: "{{ .Values.env.OPENAI_API_KEY }}"
+            - name: JIRA_HOST
+              value: "{{ .Values.env.JIRA_HOST }}"
+            - name: JIRA_USER
+              value: "{{ .Values.env.JIRA_USER }}"
+            - name: JIRA_PASSWORD
+              value: "{{ .Values.env.JIRA_PASSWORD }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.flask.port }}
+              protocol: TCP
+          volumeMounts:
+            - name: session-data
+              mountPath: /app/flask_session
+            {{- if .Values.nfs.enabled }}
+            - name: config-nfs
+              mountPath: {{ .Values.nfs.mountPath }}
+              {{- if .Values.nfs.readOnly }}
+              readOnly: true
+              {{- end }}
+            {{- else }}
+            - name: config-volume
+              mountPath: /app/configuration
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: session-data
+          emptyDir: {}
+        {{- if .Values.nfs.enabled }}
+        - name: config-nfs
+          nfs:
+            server: {{ .Values.nfs.server }}
+            path: {{ .Values.nfs.path }}
+        {{- else }}
+        - name: config-volume
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "jira-ticket-classifier.fullname" . }}-config
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

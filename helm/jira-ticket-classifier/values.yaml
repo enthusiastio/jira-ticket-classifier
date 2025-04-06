@@ -5,8 +5,8 @@
 replicaCount: 1
 
 image:
-  repository: jira-ticket-classifier
-  pullPolicy: IfNotPresent
+  repository: enthusiast/jira-ticket-classifier
+  pullPolicy: always
   tag: "latest"
 
 imagePullSecrets: []

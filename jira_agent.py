@@ -236,6 +236,8 @@ def classify_ticket(ticket, software_products=None):
     Example response format: 
     {{"component": "scicat", "work_type": "Design", "confidence": "High", "reason": "This is about SciCat metadata features"}}
     """
+
+    print(f"Prompt: {prompt}")
     
     # Call the LLM with the prompt
     response = llm.invoke(prompt)
@@ -323,7 +325,7 @@ def process_ticket(ticket, return_details=False, preview_only=False):
         return
     
     # Classify the ticket
-    classification = classify_ticket(ticket, software_products)
+    classification = classify_ticket(ticket)
     result["classification"] = classification
     print(f"Classification: {classification}")
     

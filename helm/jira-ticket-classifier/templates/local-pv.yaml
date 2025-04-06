@@ -1,0 +1,33 @@
+{{- if .Values.localPersistence.enabled }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "jira-ticket-classifier.fullname" . }}-config-pv
+  labels:
+    {{- include "jira-ticket-classifier.labels" . | nindent 4 }}
+    app.kubernetes.io/component: config-storage
+spec:
+  capacity:
+    storage: {{ .Values.localPersistence.size }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: {{ .Values.localPersistence.reclaimPolicy }}
+  storageClassName: local-storage
+  local:
+    path: {{ .Values.localPersistence.path }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          {{- if .Values.localPersistence.nodeSelector }}
+            {{- range .Values.localPersistence.nodeSelector }}
+            - {{ . }}
+            {{- end }}
+          {{- else }}
+            - {{ .Values.localPersistence.nodeName | default "kubernetes" }}
+          {{- end }}
+{{- end }}

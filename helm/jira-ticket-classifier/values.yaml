@@ -27,12 +27,14 @@ nfs:
   mountPath: "/app/configuration"
   readOnly: false
 
-# Storage for local PVC when NFS is not used
-persistence:
+# Local persistent volume configuration
+localPersistence:
   enabled: true
-  storageClass: ""
-  accessMode: ReadWriteOnce
-  size: 1Gi
+  nodeName: ""  # Set this to the name of the node where the local path exists
+  nodeSelector: []  # Alternative to nodeName, list of node hostnames
+  path: "/var/lib/jira-ticket-classifier/configuration"  # Path on the node where data will be stored
+  size: "1Gi"
+  reclaimPolicy: "Retain"  # Options: Delete, Retain
 
 # Flask application configuration
 flask:

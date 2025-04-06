@@ -1,0 +1,16 @@
+{{- if .Values.localPersistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "jira-ticket-classifier.fullname" . }}-config-pvc
+  labels:
+    {{- include "jira-ticket-classifier.labels" . | nindent 4 }}
+spec:
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.localPersistence.size }}
+  volumeName: {{ include "jira-ticket-classifier.fullname" . }}-config-pv
+{{- end }}

@@ -48,6 +48,9 @@ spec:
               {{- if .Values.nfs.readOnly }}
               readOnly: true
               {{- end }}
+            {{- else if .Values.localPersistence.enabled }}
+            - name: config-local-storage
+              mountPath: /app/configuration
             {{- else }}
             - name: config-volume
               mountPath: /app/configuration
@@ -70,13 +73,22 @@ spec:
           nfs:
             server: {{ .Values.nfs.server }}
             path: {{ .Values.nfs.path }}
+        {{- else if .Values.localPersistence.enabled }}
+        - name: config-local-storage
+          persistentVolumeClaim:
+            claimName: {{ include "jira-ticket-classifier.fullname" . }}-config-pvc
         {{- else }}
         - name: config-volume
           emptyDir: {}
         {{- end }}
-      {{- with .Values.nodeSelector }}
+      {{- if or .Values.nodeSelector .Values.localPersistence.enabled }}
       nodeSelector:
+        {{- if .Values.localPersistence.enabled }}
+        kubernetes.io/hostname: {{ .Values.localPersistence.nodeName | default "kubernetes" }}
+        {{- end }}
+        {{- with .Values.nodeSelector }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
       {{- with .Values.affinity }}
       affinity:

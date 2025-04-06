@@ -51,9 +51,6 @@ spec:
             {{- else if .Values.localPersistence.enabled }}
             - name: config-local-storage
               mountPath: /app/configuration
-            {{- else }}
-            - name: config-volume
-              mountPath: /app/configuration
             {{- end }}
           livenessProbe:
             httpGet:
@@ -77,9 +74,6 @@ spec:
         - name: config-local-storage
           persistentVolumeClaim:
             claimName: {{ include "jira-ticket-classifier.fullname" . }}-config-pvc
-        {{- else }}
-        - name: config-volume
-          emptyDir: {}
         {{- end }}
       {{- if or .Values.nodeSelector .Values.localPersistence.enabled }}
       nodeSelector:

@@ -1,12 +1,15 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 import logging
 import os
 import dotenv
 import json
+import base64
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_session import Session
 from jira_agent import (JiraAPI, classify_ticket, process_ticket, update_ticket, 
                        load_software_products, save_software_products,
                        load_extra_info, save_extra_info)
+from functools import wraps
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -28,21 +31,85 @@ app.config['SESSION_PERMANENT'] = True
 # Initialize the session extension
 Session(app)
 
+# Authentication decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'jira_authenticated' not in session or not session['jira_authenticated']:
+            flash('Please log in to access this page', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        jira_host = request.form.get('jira_host', os.getenv("JIRA_HOST", ""))
+        
+        # Validate inputs
+        if not username or not password:
+            flash('Username and password are required', 'error')
+            return render_template('login.html', jira_host=jira_host)
+            
+        try:
+            # Test JIRA credentials by making a test API call
+            test_result = JiraAPI.test_connection(jira_host, username, password)
+            
+            if test_result.get('success'):
+                # Store in session
+                session['jira_username'] = username
+                # Encode password to add a minimal level of obfuscation (not true encryption)
+                session['jira_password'] = base64.b64encode(password.encode()).decode()
+                session['jira_host'] = jira_host
+                session['jira_authenticated'] = True
+                
+                flash('Login successful!', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash(f'Login failed: {test_result.get("error", "Invalid credentials")}', 'error')
+        except Exception as e:
+            logger.error(f"Login error: {str(e)}")
+            flash(f'Login failed: {str(e)}', 'error')
+            
+        return render_template('login.html', jira_host=jira_host)
+    else:
+        # For GET request, show login form
+        # Pre-fill JIRA host if available from environment
+        jira_host = os.getenv("JIRA_HOST", "")
+        return render_template('login.html', jira_host=jira_host)
+
+@app.route('/logout')
+def logout():
+    # Clear JIRA credentials from session
+    session.pop('jira_username', None)
+    session.pop('jira_password', None)
+    session.pop('jira_host', None)
+    session.pop('jira_authenticated', None)
+    
+    flash('You have been logged out', 'success')
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 @app.route('/products')
+@login_required
 def products_page():
     return render_template('products.html')
 
 @app.route('/api/products', methods=['GET'])
+@login_required
 def get_products():
     """Get all software products"""
     products = load_software_products()
     return jsonify(products)
 
 @app.route('/api/products', methods=['POST'])
+@login_required
 def add_product():
     """Add a new software product"""
     try:
@@ -99,6 +166,7 @@ def add_product():
         }), 500
 
 @app.route('/api/products/<string:name>', methods=['PUT'])
+@login_required
 def update_product(name):
     """Update an existing software product"""
     try:
@@ -154,6 +222,7 @@ def update_product(name):
         }), 500
 
 @app.route('/api/products/<string:name>', methods=['DELETE'])
+@login_required
 def delete_product(name):
     """Delete a software product"""
     try:
@@ -190,12 +259,14 @@ def delete_product(name):
         }), 500
 
 @app.route('/api/extra-info', methods=['GET'])
+@login_required
 def get_extra_info():
     """Get all extra info items"""
     info_items = load_extra_info()
     return jsonify(info_items)
 
 @app.route('/api/extra-info', methods=['POST'])
+@login_required
 def add_extra_info():
     """Add a new extra info item"""
     try:
@@ -241,6 +312,7 @@ def add_extra_info():
         }), 500
 
 @app.route('/api/extra-info/<int:index>', methods=['PUT'])
+@login_required
 def update_extra_info(index):
     """Update an existing extra info item"""
     try:
@@ -286,6 +358,7 @@ def update_extra_info(index):
         }), 500
 
 @app.route('/api/extra-info/<int:index>', methods=['DELETE'])
+@login_required
 def delete_extra_info(index):
     """Delete an extra info item"""
     try:
@@ -322,6 +395,7 @@ def delete_extra_info(index):
         }), 500
 
 @app.route('/preview-tickets', methods=['POST'])
+@login_required
 def preview_jira_tickets():
     try:
         # Get sprint IDs from the request
@@ -398,6 +472,7 @@ def preview_jira_tickets():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/update-tickets', methods=['POST'])
+@login_required
 def update_jira_tickets():
     try:
         # Get previewed tickets from session

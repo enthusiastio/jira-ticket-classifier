@@ -35,10 +35,6 @@ spec:
               value: "{{ .Values.env.OPENAI_API_KEY }}"
             - name: JIRA_HOST
               value: "{{ .Values.env.JIRA_HOST }}"
-            - name: JIRA_USER
-              value: "{{ .Values.env.JIRA_USER }}"
-            - name: JIRA_PASSWORD
-              value: "{{ .Values.env.JIRA_PASSWORD }}"
           ports:
             - name: http
               containerPort: {{ .Values.flask.port }}

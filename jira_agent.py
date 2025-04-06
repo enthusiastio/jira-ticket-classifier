@@ -80,18 +80,69 @@ labels = ["Design", "Development", "Maintenance", "Devops", "Testing", "Document
 
 # Jira API class
 class JiraAPI:
-    BASE_URL = os.getenv("JIRA_HOST")  # Replace with your Jira server URL
-    USERNAME = os.getenv("JIRA_USER")  # Replace with your Jira username
-    PASSWORD = os.getenv("JIRA_PASSWORD")  # Replace with your Jira password
+    @staticmethod
+    def get_auth_credentials():
+        """Get authentication credentials from the Flask session or environment variables as fallback"""
+        # Import Flask dependencies dynamically to avoid circular imports
+        from flask import session, current_app
+        import base64
+        
+        # First check if credentials are in the session (preferred)
+        if session and 'jira_username' in session and 'jira_password' in session and 'jira_host' in session:
+            # Get base URL from session
+            base_url = session.get('jira_host')
+            # Get username from session
+            username = session.get('jira_username')
+            # Get password from session (decode from base64)
+            try:
+                password = base64.b64decode(session.get('jira_password', '')).decode()
+            except Exception:
+                password = ''  # Reset password if decoding fails
+                
+            return {
+                'base_url': base_url,
+                'username': username,
+                'password': password
+            }
+        
+        # Fallback to environment variables (legacy support)
+        return {
+            'base_url': os.getenv("JIRA_HOST"),
+            'username': os.getenv("JIRA_USER"),
+            'password': os.getenv("JIRA_PASSWORD")
+        }
+
+    @staticmethod
+    def test_connection(base_url, username, password):
+        """Test JIRA API connection with provided credentials"""
+        test_url = f"{base_url}/rest/api/2/myself"
+        
+        try:
+            response = requests.get(
+                test_url,
+                auth=HTTPBasicAuth(username, password),
+                headers={"Accept": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                return {"success": True, "user": response.json().get('displayName')}
+            else:
+                return {"success": False, "error": f"API returned status code {response.status_code}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     @staticmethod
     def fetch_tickets(sprint_id=None):
         """Fetch Jira tickets using the REST API."""
-        search_url = f"{JiraAPI.BASE_URL}/rest/api/2/search"
+        # Get auth credentials
+        creds = JiraAPI.get_auth_credentials()
+        base_url = creds['base_url']
+        username = creds['username']
+        password = creds['password']
         
-
+        search_url = f"{base_url}/rest/api/2/search"
+        
         jql_query = f'project = "Scientific Web Applications" AND component is EMPTY AND sprint in ({sprint_id})'
-
             
         params = {"jql": jql_query}
 
@@ -99,7 +150,7 @@ class JiraAPI:
         response = requests.get(
             search_url,
             params=params,
-            auth=HTTPBasicAuth(JiraAPI.USERNAME, JiraAPI.PASSWORD),
+            auth=HTTPBasicAuth(username, password),
             headers={"Accept": "application/json"}
         )
 
@@ -124,12 +175,18 @@ class JiraAPI:
     @staticmethod
     def update_ticket(ticket_id, fields):
         """Update Jira ticket using the REST API."""
-        update_url = f"{JiraAPI.BASE_URL}/rest/api/2/issue/{ticket_id}"
+        # Get auth credentials
+        creds = JiraAPI.get_auth_credentials()
+        base_url = creds['base_url']
+        username = creds['username']
+        password = creds['password']
+        
+        update_url = f"{base_url}/rest/api/2/issue/{ticket_id}"
         payload = {"fields": fields}
 
         response = requests.put(
             update_url,
-            auth=HTTPBasicAuth(JiraAPI.USERNAME, JiraAPI.PASSWORD),
+            auth=HTTPBasicAuth(username, password),
             headers={"Content-Type": "application/json"},
             data=json.dumps(payload)
         )

@@ -197,15 +197,19 @@ class JiraAPI:
         return response
 
 
-def classify_ticket(ticket, software_products=software_products):
+def classify_ticket(ticket, software_products=None):
     """LLM-based classification."""
+    # Always reload the latest software products and extra info before classification
+    if software_products is None:
+        software_products = load_software_products()
+    
     # Build project descriptions dynamically from `software_products`
     project_descriptions = "\n".join([
         f"{name} - {details['description']} (Authors always are one of: {', '.join(details['likely_authors'])})"
         for name, details in software_products.items()
     ])
     
-    # Load current extra info
+    # Always load the latest extra info
     current_extra_info = load_extra_info()
     extra_info_text = "\n".join(current_extra_info) if current_extra_info else "No extra info provided."
     

@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: enthusiast/jira-ticket-classifier
-  pullPolicy: always
+  pullPolicy: Always
   tag: "latest"
 
 imagePullSecrets: []

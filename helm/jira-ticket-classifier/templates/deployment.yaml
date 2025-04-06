@@ -72,12 +72,7 @@ spec:
             path: {{ .Values.nfs.path }}
         {{- else }}
         - name: config-volume
-          {{- if .Values.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ include "jira-ticket-classifier.fullname" . }}-config
-          {{- else }}
           emptyDir: {}
-          {{- end }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

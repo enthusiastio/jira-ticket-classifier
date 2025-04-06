@@ -5,8 +5,8 @@
 replicaCount: 1
 
 image:
-  repository: enthusiast/jira-ticket-classifier
-  pullPolicy: always
+  repository: jira-ticket-classifier
+  pullPolicy: IfNotPresent
   tag: "latest"
 
 imagePullSecrets: []
@@ -26,13 +26,6 @@ nfs:
   path: ""
   mountPath: "/app/configuration"
   readOnly: false
-
-# Storage for local PVC when NFS is not used
-persistence:
-  enabled: true
-  storageClass: ""
-  accessMode: ReadWriteOnce
-  size: 1Gi
 
 # Flask application configuration
 flask:

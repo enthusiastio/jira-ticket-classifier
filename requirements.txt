@@ -25,6 +25,7 @@ jsonpointer==3.0.0
 langchain==0.3.14
 langchain-community==0.3.14
 langchain-core==0.3.29
+langchain-openai==0.2.7
 langchain-text-splitters==0.3.4
 langsmith==0.2.10
 marshmallow==3.23.3

@@ -173,7 +173,7 @@ class JiraAPI:
         return tickets
 
     @staticmethod
-    def update_ticket(ticket_id, fields):
+    def update_ticket(ticket_id, fields, notify_users=False):
         """Update Jira ticket using the REST API."""
         # Get auth credentials
         creds = JiraAPI.get_auth_credentials()
@@ -182,12 +182,15 @@ class JiraAPI:
         password = creds['password']
         
         update_url = f"{base_url}/rest/api/2/issue/{ticket_id}"
+        # Add notifyUsers parameter to disable email notifications if notify_users is False
+        params = {"notifyUsers": str(notify_users).lower()}
         payload = {"fields": fields}
 
         response = requests.put(
             update_url,
             auth=HTTPBasicAuth(username, password),
             headers={"Content-Type": "application/json"},
+            params=params,
             data=json.dumps(payload)
         )
 
@@ -351,7 +354,7 @@ def process_ticket(ticket, return_details=False, preview_only=False):
                     JiraAPI.update_ticket(ticket["id"], {
                         "components": [{"id": componentId}],
                         "labels": [classification["work_type"]]
-                    })
+                    }, notify_users=False)
                     result["updated"] = True
                 except Exception as e:
                     logger.error(f"Error updating ticket {ticket['key']}: {e}")
@@ -390,7 +393,7 @@ def update_ticket(ticket, classification):
         JiraAPI.update_ticket(ticket["id"], {
             "components": [{"id": componentId}],
             "labels": [classification["work_type"]]
-        })
+        }, notify_users=False)
         result["updated"] = True
     except Exception as e:
         logger.error(f"Error updating ticket {ticket['key']}: {e}")

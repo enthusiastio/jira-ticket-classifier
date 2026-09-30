@@ -32,7 +32,7 @@ nfs:
 # Local persistent volume configuration
 localPersistence:
   enabled: true
-  nodeName: ""  # Set this to the name of the node where the local path exists
+  nodeName: "sims01"  # Node where the local path exists
   nodeSelector: []  # Alternative to nodeName, list of node hostnames
   path: "/var/lib/jira-ticket-classifier/configuration"  # Path on the node where data will be stored
   size: "1Gi"

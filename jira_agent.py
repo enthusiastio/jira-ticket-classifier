@@ -127,8 +127,20 @@ class JiraAPI:
             if response.status_code == 200:
                 return {"success": True, "user": response.json().get('displayName')}
             else:
-                return {"success": False, "error": f"API returned status code {response.status_code}"}
+                # Jira (via Seraph) reports the real failure reason in this header,
+                # e.g. AUTHENTICATION_DENIED / AUTHENTICATED_FAILED (CAPTCHA lockout)
+                seraph_reason = response.headers.get('X-Seraph-LoginReason')
+                logger.warning(
+                    f"JIRA login test failed for user '{username}' at {test_url}: "
+                    f"status={response.status_code}, X-Seraph-LoginReason={seraph_reason}, "
+                    f"body={response.text[:500]}"
+                )
+                error_msg = f"API returned status code {response.status_code}"
+                if seraph_reason:
+                    error_msg += f" ({seraph_reason})"
+                return {"success": False, "error": error_msg}
         except Exception as e:
+            logger.error(f"JIRA login test raised an exception for user '{username}' at {test_url}: {e}")
             return {"success": False, "error": str(e)}
 
     @staticmethod

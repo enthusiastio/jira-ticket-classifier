@@ -5,10 +5,12 @@
 replicaCount: 1
 
 image:
-  repository: enthusiast/jira-ticket-classifier
+  repository: ghcr.io/enthusiastio/jira-ticket-classifier
   pullPolicy: Always
   tag: "latest"
 
+# Required if the ghcr.io package is private; create with:
+# kubectl create secret docker-registry ghcr-creds --docker-server=ghcr.io --docker-username=<user> --docker-password=<PAT>
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
